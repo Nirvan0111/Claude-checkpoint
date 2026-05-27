@@ -46,7 +46,7 @@ class BaseDocument(BaseModel):
         return cls(**doc)
 
 
-DecisionType = Literal["approved", "rejected", "challenged"]
+DecisionType = Literal["approved", "rejected", "challenged", "rolled_back"]
 
 
 class ReviewDecision(BaseDocument):

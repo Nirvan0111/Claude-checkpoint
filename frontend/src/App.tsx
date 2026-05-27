@@ -14,6 +14,7 @@ const DECISION_COPY: Record<DecisionType, string> = {
   approved: 'Approved — output accepted.',
   rejected: 'Rejected — output discarded.',
   challenged: 'Challenge sent back to Claude.',
+  rolled_back: 'Changes rolled back.',
 };
 
 const Shell: React.FC = () => {
@@ -26,13 +27,18 @@ const Shell: React.FC = () => {
     closeCheckpoint,
     checkpointTarget,
     applyDecision,
+    toggleProtected,
+    markRolledBack,
     getMessage,
     getPromptFor,
   } = useConversation();
 
   const toast = useToast();
   const armedRef = useRef(false);
+  const [armed, setArmed] = React.useState(false);
   const scrollAnchor = useRef<HTMLDivElement>(null);
+
+  const checkpointActive = !!checkpointTarget || armed;
 
   // Auto-scroll to bottom when messages change
   useEffect(() => {
@@ -46,6 +52,7 @@ const Shell: React.FC = () => {
     if (last && last.role === 'assistant') {
       openCheckpoint(last.id);
       armedRef.current = false;
+      setArmed(false);
     }
   }, [messages, openCheckpoint]);
 
@@ -64,7 +71,8 @@ const Shell: React.FC = () => {
     applyDecision(messageId, decision, note);
 
     // Toast feedback
-    toast.show(DECISION_COPY[decision], decision === 'rejected' ? 'warn' : 'success');
+    const tone = decision === 'rejected' ? 'warn' : decision === 'rolled_back' ? 'info' : 'success';
+    toast.show(DECISION_COPY[decision], tone);
 
     // Close panel
     closeCheckpoint();
@@ -87,6 +95,19 @@ const Shell: React.FC = () => {
     }
   };
 
+  const handleRollback = () => {
+    if (!checkpointTarget) return;
+    const messageId = checkpointTarget.assistantMessageId;
+    markRolledBack(messageId);
+    // Apply decision (shows toast, inline badge, closes panel, persists)
+    handleDecision('rolled_back');
+  };
+
+  const handleToggleProtected = (path: string) => {
+    if (!checkpointTarget) return;
+    toggleProtected(checkpointTarget.assistantMessageId, path);
+  };
+
   return (
     <div className="min-h-screen bg-app flex flex-col">
       {/* Top bar */}
@@ -99,15 +120,25 @@ const Shell: React.FC = () => {
             <span className="w-7 h-7 rounded-lg bg-ink-900 text-white flex items-center justify-center">
               <ShieldCheck className="w-3.5 h-3.5" strokeWidth={1.75} />
             </span>
-            <div className="leading-tight">
-              <div className="font-serif text-[15px] text-ink-900">Claude Checkpoint</div>
-              <div className="text-[10px] tracking-[0.08em] uppercase text-ink-400 font-medium">
-                Phase 1 · Foundation
-              </div>
+            <div className="font-serif text-[15px] text-ink-900 leading-none">
+              Claude Checkpoint
             </div>
           </div>
-          <div className="text-[12px] text-ink-500" data-testid="conversation-id">
-            Session · {conversationId.slice(0, 6)}
+          <div
+            className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full border text-[11px] font-medium transition-colors duration-300 ${
+              checkpointActive
+                ? 'bg-[#F0FDF4] border-[#BBF7D0] text-[#166534]'
+                : 'bg-white border-line text-ink-500'
+            }`}
+            data-testid="checkpoint-status"
+            aria-live="polite"
+          >
+            <span
+              className={`w-1.5 h-1.5 rounded-full ${
+                checkpointActive ? 'bg-[#16A34A]' : 'bg-ink-400'
+              }`}
+            />
+            {checkpointActive ? 'Checkpoint active' : 'Checkpoint inactive'}
           </div>
         </div>
       </header>
@@ -141,6 +172,11 @@ const Shell: React.FC = () => {
         onSend={sendPrompt}
         onActivateCheckpointHint={() => {
           armedRef.current = true;
+          setArmed(true);
+        }}
+        onCancelArmed={() => {
+          armedRef.current = false;
+          setArmed(false);
         }}
       />
 
@@ -150,6 +186,8 @@ const Shell: React.FC = () => {
         output={checkpointOutput}
         onClose={closeCheckpoint}
         onDecide={handleDecision}
+        onRollback={handleRollback}
+        onToggleProtected={handleToggleProtected}
       />
     </div>
   );

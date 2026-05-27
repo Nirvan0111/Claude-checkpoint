@@ -1,6 +1,7 @@
 import { useCallback, useMemo, useRef, useState } from 'react';
-import { CheckpointTarget, DecisionType, Message, Signal } from '../types';
+import { CheckpointTarget, DecisionType, ExecutionData, Message, ProtectedFile, Signal } from '../types';
 import { generateMockReply, generateMockSignals } from '../data/mockData';
+import { generateMockExecution } from '../data/executionMock';
 
 const newId = () => Math.random().toString(36).slice(2, 10);
 const nowIso = () => new Date().toISOString();
@@ -18,6 +19,8 @@ interface UseConversationReturn {
     decision: DecisionType,
     note?: string
   ) => void;
+  toggleProtected: (assistantMessageId: string, path: string) => void;
+  markRolledBack: (assistantMessageId: string) => void;
   getMessage: (id: string) => Message | undefined;
   getPromptFor: (assistantMessageId: string) => Message | undefined;
 }
@@ -60,6 +63,7 @@ export function useConversation(): UseConversationReturn {
     // Simulate Claude generating a reply (mock).
     window.setTimeout(() => {
       const signals: Signal[] = generateMockSignals(trimmed);
+      const execution: ExecutionData = generateMockExecution(trimmed);
       const assistantMsg: Message = {
         id: newId(),
         role: 'assistant',
@@ -67,6 +71,7 @@ export function useConversation(): UseConversationReturn {
         createdAt: nowIso(),
         promptRef: userMsg.id,
         signals,
+        execution,
       };
       setMessages((prev) => [...prev, assistantMsg]);
       setIsTyping(false);
@@ -109,6 +114,39 @@ export function useConversation(): UseConversationReturn {
     []
   );
 
+  const toggleProtected = useCallback(
+    (assistantMessageId: string, path: string) => {
+      setMessages((prev) =>
+        prev.map((m) => {
+          if (m.id !== assistantMessageId || !m.execution) return m;
+          const nextProtected: ProtectedFile[] = m.execution.protectedFiles.map((p) =>
+            p.path === path ? { ...p, locked: !p.locked } : p
+          );
+          return {
+            ...m,
+            execution: { ...m.execution, protectedFiles: nextProtected },
+          };
+        })
+      );
+    },
+    []
+  );
+
+  const markRolledBack = useCallback(
+    (assistantMessageId: string) => {
+      setMessages((prev) =>
+        prev.map((m) => {
+          if (m.id !== assistantMessageId || !m.execution) return m;
+          return {
+            ...m,
+            execution: { ...m.execution, rolledBack: true },
+          };
+        })
+      );
+    },
+    []
+  );
+
   return {
     conversationId: conversationIdRef.current,
     messages,
@@ -118,6 +156,8 @@ export function useConversation(): UseConversationReturn {
     closeCheckpoint,
     checkpointTarget,
     applyDecision,
+    toggleProtected,
+    markRolledBack,
     getMessage,
     getPromptFor,
   };

@@ -34,6 +34,12 @@ export const WelcomeState: React.FC<Props> = ({ onSuggestion }) => {
           menu to surface assumptions, missing context, and verification needs
           before you act.
         </p>
+        <p
+          className="text-ink-500 text-[15px] leading-relaxed max-w-xl"
+          data-testid="welcome-secondary-line"
+        >
+          Checkpoint adds a review step before outputs are accepted or applied.
+        </p>
       </div>
 
       <div className="w-full mt-2">
@@ -46,7 +52,7 @@ export const WelcomeState: React.FC<Props> = ({ onSuggestion }) => {
               key={i}
               type="button"
               onClick={() => onSuggestion?.(s)}
-              className="text-left w-full px-4 py-3 rounded-xl border border-line-light bg-white hover:bg-bubble/60 hover:border-line transition-all duration-200 text-[14px] text-ink-700 hover:text-ink-900"
+              className="text-left w-full px-4 py-3 rounded-xl border border-line-light bg-white hover:bg-bubble/50 hover:border-line transition-colors duration-200 text-[14px] text-ink-700 hover:text-ink-900"
               data-testid={`welcome-suggestion-${i}`}
             >
               {s}

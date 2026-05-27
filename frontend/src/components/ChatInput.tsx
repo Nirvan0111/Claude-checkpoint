@@ -11,6 +11,7 @@ import {
 interface Props {
   onSend: (text: string) => void;
   onActivateCheckpointHint?: () => void;
+  onCancelArmed?: () => void;
   disabled?: boolean;
 }
 
@@ -18,6 +19,7 @@ interface MenuItemProps {
   icon: React.ElementType;
   title: string;
   description?: string;
+  bestFor?: string;
   onClick?: () => void;
   testid: string;
   highlighted?: boolean;
@@ -28,6 +30,7 @@ const MenuItem: React.FC<MenuItemProps> = ({
   icon: Icon,
   title,
   description,
+  bestFor,
   onClick,
   testid,
   highlighted,
@@ -37,11 +40,11 @@ const MenuItem: React.FC<MenuItemProps> = ({
     type="button"
     onClick={onClick}
     disabled={disabled}
-    className={`w-full text-left flex items-start gap-3 px-3 py-2.5 rounded-xl transition-colors ${
+    className={`w-full text-left flex items-start gap-3 px-3 py-2.5 rounded-xl transition-colors duration-200 ${
       disabled
         ? 'opacity-50 cursor-not-allowed'
         : 'hover:bg-bubble cursor-pointer'
-    } ${highlighted ? 'bg-bubble/60' : ''}`}
+    } ${highlighted ? 'bg-bubble/60 hover:bg-bubble' : ''}`}
     data-testid={testid}
   >
     <span
@@ -56,11 +59,24 @@ const MenuItem: React.FC<MenuItemProps> = ({
       {description && (
         <div className="text-[12px] text-ink-500 leading-snug mt-0.5">{description}</div>
       )}
+      {bestFor && (
+        <div
+          className="text-[11px] text-ink-400 leading-snug mt-1.5"
+          data-testid={`${testid}-best-for`}
+        >
+          {bestFor}
+        </div>
+      )}
     </div>
   </button>
 );
 
-export const ChatInput: React.FC<Props> = ({ onSend, onActivateCheckpointHint, disabled }) => {
+export const ChatInput: React.FC<Props> = ({
+  onSend,
+  onActivateCheckpointHint,
+  onCancelArmed,
+  disabled,
+}) => {
   const [value, setValue] = useState('');
   const [menuOpen, setMenuOpen] = useState(false);
   const [checkpointArmed, setCheckpointArmed] = useState(false);
@@ -92,7 +108,6 @@ export const ChatInput: React.FC<Props> = ({ onSend, onActivateCheckpointHint, d
     onSend(value);
     setValue('');
     if (checkpointArmed) {
-      onActivateCheckpointHint?.();
       setCheckpointArmed(false);
     }
   };
@@ -118,7 +133,10 @@ export const ChatInput: React.FC<Props> = ({ onSend, onActivateCheckpointHint, d
             </span>
             <button
               type="button"
-              onClick={() => setCheckpointArmed(false)}
+              onClick={() => {
+                setCheckpointArmed(false);
+                onCancelArmed?.();
+              }}
               className="text-ink-500 hover:text-ink-900 transition-colors text-[12px]"
               data-testid="checkpoint-armed-cancel"
             >
@@ -149,10 +167,12 @@ export const ChatInput: React.FC<Props> = ({ onSend, onActivateCheckpointHint, d
                   icon={ShieldCheck}
                   title="Claude Checkpoint"
                   description="Review assumptions, context gaps and verification needs before acting on important outputs."
+                  bestFor="Best for coding, research and planning tasks."
                   highlighted
                   onClick={() => {
                     setCheckpointArmed(true);
                     setMenuOpen(false);
+                    onActivateCheckpointHint?.();
                     textareaRef.current?.focus();
                   }}
                   testid="action-menu-checkpoint"
@@ -207,7 +227,7 @@ export const ChatInput: React.FC<Props> = ({ onSend, onActivateCheckpointHint, d
         </div>
 
         <p className="text-[11px] text-ink-400 text-center mt-2">
-          Claude can make mistakes. Use Checkpoint before acting on important outputs.
+          For important outputs, use Checkpoint to review assumptions and verification needs.
         </p>
       </div>
     </div>

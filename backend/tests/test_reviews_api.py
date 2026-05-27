@@ -78,6 +78,17 @@ class TestReviews:
         rid = data.get("id") or data.get("_id")
         TestReviews.created_ids.append(rid)
 
+    def test_create_review_rolled_back(self, session, conversation_id):
+        payload = self._payload(conversation_id, "rolled_back")
+        r = session.post(f"{API}/reviews", json=payload, timeout=10)
+        assert r.status_code == 200, r.text
+        data = r.json()
+        assert data["decision"] == "rolled_back"
+        assert data["conversation_id"] == conversation_id
+        rid = data.get("id") or data.get("_id")
+        assert rid and isinstance(rid, str)
+        TestReviews.created_ids.append(rid)
+
     def test_create_review_invalid_decision(self, session, conversation_id):
         payload = self._payload(conversation_id, "approved")
         payload["decision"] = "bogus"
@@ -94,7 +105,7 @@ class TestReviews:
         for item in data:
             assert item["conversation_id"] == conversation_id
         decisions = {d["decision"] for d in data}
-        assert {"approved", "rejected", "challenged"}.issubset(decisions)
+        assert {"approved", "rejected", "challenged", "rolled_back"}.issubset(decisions)
 
     def test_list_reviews_unfiltered(self, session):
         r = session.get(f"{API}/reviews", timeout=10)
