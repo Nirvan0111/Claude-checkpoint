@@ -6,6 +6,8 @@ interface Props {
   kind: SignalKind;
   label: string;
   className?: string;
+  size?: 'sm' | 'xs';
+  title?: string;
 }
 
 const KIND_STYLES: Record<SignalKind, string> = {
@@ -22,14 +24,20 @@ const KIND_ICON: Record<SignalKind, React.ElementType> = {
   source: BookOpenCheck,
 };
 
-export const SignalPill: React.FC<Props> = ({ kind, label, className }) => {
+export const SignalPill: React.FC<Props> = ({ kind, label, className, size = 'sm', title }) => {
   const Icon = KIND_ICON[kind];
+  const sizeClass =
+    size === 'xs'
+      ? 'px-1.5 py-0.5 text-[10px] gap-1'
+      : 'px-2.5 py-1 text-[11px] gap-1.5';
+  const iconClass = size === 'xs' ? 'w-2.5 h-2.5' : 'w-3 h-3';
   return (
     <span
-      className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-medium border ${KIND_STYLES[kind]} ${className || ''}`}
+      className={`inline-flex items-center rounded-full font-medium border ${sizeClass} ${KIND_STYLES[kind]} ${className || ''}`}
       data-testid={`signal-pill-${kind}`}
+      title={title}
     >
-      <Icon className="w-3 h-3" strokeWidth={1.75} />
+      <Icon className={iconClass} strokeWidth={1.75} />
       {label}
     </span>
   );

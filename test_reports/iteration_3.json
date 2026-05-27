@@ -1,0 +1,34 @@
+{
+  "summary": "Iteration 3 — Claude Checkpoint UX improvements + Vercel deployment readiness fully verified. Backend 11/11 pytest pass (health, all four decisions including challenged + rolled_back, list filter, get by id, 404, 400 malformed id). Frontend E2E (12/12 PASS): inline paragraph-anchored SignalPills (data-testid='inline-signals-paragraph-<idx>') render correctly with size='xs'; new ReviewSummary section shows 4 lines including zero-state copy ('no supporting sources'); signal detail strings are contextual (matched keywords: 'Confirm', 'Cost-of-error', 'auditability', 'calibrated'); ActionBar label is 'Challenge This Output'; two-step challenge flow works as specified — first click reveals challenge-results-section with all four child blocks (alternative/weakness/missing/failure) + challenge-note-input AND does NOT persist a decision (no decision-badge), second click commits, closes panel, shows decision-badge-challenged + inline-challenge-<id> in chat; sticky action-bar-footer present; Activity Timeline shows 'X of Y events' counter, expand-all↔collapse-all toggle, color-coded left borders per action kind; Protected Files panel uses explicit Locked/Editable BUTTONS (not toggle switches) with proper helper text and state line; Approve regression confirmed.",
+  "backend_issues": {
+    "critical": [],
+    "minor": []
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_reviews_api.py",
+    "/app/test_reports/pytest/pytest_results.xml"
+  ],
+  "action_items": [
+    "Low-priority: Fix React DOM nesting warning — `<li>` (in ActivityTimeline.tsx wrapper that adds the colored left border) contains another `<li>` rendered inside TimelineItem.tsx. Console emits 'validateDOMNesting: <li> cannot appear as a descendant of <li>'. Either change the outer wrapper to a `<div>` and move the border class onto it (recommended), or remove the inner `<li>` from TimelineItem. Functionality unaffected."
+  ],
+  "critical_code_review_comments": [
+    "ActivityTimeline.tsx wraps each TimelineItem in an `<li>` with the color-coded border, but TimelineItem itself renders an `<li>` — produces invalid HTML and a React warning. Recommend outer be a `<div>` with the border class (li > li nesting).",
+    "ReviewPanel.tsx: handleDecide for 'challenged' currently treats the very first click as 'generate challenge only' when challenge is missing — but if a user dismisses the panel after first click and reopens, the previously-generated challenge stays on the message, so the next click commits immediately. This is the intended two-step UX per spec; just call out as a behavioural note.",
+    "mockData.ts pulls signals per-reply based on prompt char-sum modulo — works deterministically. The contextual keywords (Lean Startup, PostgreSQL, feature flag) only land if the modulo picks the right reply; other replies have different but still contextual detail strings. Specificity is acceptable across all four reply variants.",
+    "ProtectedFilesPanel.tsx button uses aria-pressed for accessibility but visual state hinges on label text + icon — this is fine for screen readers; just note both Locked and Editable buttons share styling structure and only colour/text differ, which is appropriate.",
+    "server.py: CORS_ORIGINS list-comp `[o.strip() for o in ... if o.strip()]` correctly trims whitespace and drops empties. Verified at runtime: tests pass through the public REACT_APP_BACKEND_URL ingress."
+  ],
+  "updated_files": [],
+  "success_rate": {"backend": "100% (11/11)", "frontend": "100% (12/12 assertions on iteration-3 surfaces; approve regression also green)"},
+  "test_credentials": "N/A (no auth)",
+  "seed_data_creation": "Backend pytest inserted ~5 TEST_ prefixed reviews (approved, rejected, challenged-with-note, rolled_back, invalid-rejected-422). UI E2E created one challenged decision (with note 'Please reconsider the assumption about rollout cadence') and one approved decision in claude_checkpoint.reviews.",
+  "retest_needed": false,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "All iteration-3 surfaces are green. One non-blocking React DOM-nesting warning remains (li>li in ActivityTimeline). Two-step challenge flow has been confirmed: first click generates results and reveals note input without persisting; second click commits decision='challenged' to backend, closes panel, renders decision-badge-challenged + inline-challenge-<id> in chat. Inline signal pills rendered with size='xs' next to their anchor paragraph; visual overlap on short paragraphs is acknowledged in spec. Protected Files now uses BUTTONs (tag='BUTTON'), not switch role — selectors should target `[data-testid='protected-toggle-<path>']` and read its text content for 'Locked' or 'Editable'.",
+  "rca_of_the_issue": "DOM nesting warning RCA: In /app/frontend/src/components/execution/ActivityTimeline.tsx (lines 64-72), each event is rendered as `<li className=\"pl-2 border-l-2 ...\"><TimelineItem ... /></li>`. TimelineItem.tsx returns its own `<li>` element, so the resulting DOM is `<ul><li class=border><li>...</li></li></ul>`. Fix: either change the outer wrapper to a `<div>` and remove the surrounding `<ul>` (or keep `<ul>` and turn outer into `<li>` while making TimelineItem render a `<div>`). Functionality unaffected — left-border colours render correctly and counter/expand-all/collapse-all all work."
+}

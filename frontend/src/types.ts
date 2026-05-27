@@ -12,6 +12,9 @@ export interface Signal {
   kind: SignalKind;
   label: string;
   detail: string;
+  // Optional anchor: index of the assistant content paragraph this signal
+  // refers to. Used to render the pill inline next to the relevant text.
+  paragraphIndex?: number;
 }
 
 export type DecisionType = 'approved' | 'rejected' | 'challenged' | 'rolled_back';
@@ -21,6 +24,15 @@ export interface ReviewDecision {
   decision: DecisionType;
   at: string; // ISO
   note?: string;
+}
+
+// --- Challenge results (Phase 3) ---
+
+export interface ChallengeResults {
+  alternativePerspective: string;
+  potentialWeakness: string;
+  missingConsiderations: string;
+  failureScenarios: string;
 }
 
 // --- Phase 2: Execution Review ---
@@ -101,6 +113,7 @@ export interface Message {
   signals?: Signal[];
   review?: ReviewDecision;
   execution?: ExecutionData;
+  challenge?: ChallengeResults;
 }
 
 export interface CheckpointTarget {

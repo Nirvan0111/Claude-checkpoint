@@ -29,6 +29,7 @@ const Shell: React.FC = () => {
     applyDecision,
     toggleProtected,
     markRolledBack,
+    generateChallenge,
     getMessage,
     getPromptFor,
   } = useConversation();
@@ -106,6 +107,11 @@ const Shell: React.FC = () => {
   const handleToggleProtected = (path: string) => {
     if (!checkpointTarget) return;
     toggleProtected(checkpointTarget.assistantMessageId, path);
+  };
+
+  const handleGenerateChallenge = () => {
+    if (!checkpointTarget) return undefined;
+    return generateChallenge(checkpointTarget.assistantMessageId);
   };
 
   return (
@@ -188,6 +194,7 @@ const Shell: React.FC = () => {
         onDecide={handleDecision}
         onRollback={handleRollback}
         onToggleProtected={handleToggleProtected}
+        onGenerateChallenge={handleGenerateChallenge}
       />
     </div>
   );

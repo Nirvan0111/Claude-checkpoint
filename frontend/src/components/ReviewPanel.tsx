@@ -1,8 +1,10 @@
 import React, { useEffect, useState } from 'react';
 import { X, ShieldCheck } from 'lucide-react';
-import { Message, DecisionType, Signal } from '../types';
+import { ChallengeResults, Message, DecisionType, Signal } from '../types';
 import SignalPill from './SignalPill';
 import ActionBar from './ActionBar';
+import ReviewSummary from './ReviewSummary';
+import ChallengeResultsSection from './ChallengeResultsSection';
 import ExecutionReviewPanel from './execution/ExecutionReviewPanel';
 
 interface Props {
@@ -13,6 +15,7 @@ interface Props {
   onDecide: (decision: DecisionType, note?: string) => void;
   onRollback?: () => void;
   onToggleProtected?: (path: string) => void;
+  onGenerateChallenge?: () => ChallengeResults | undefined;
 }
 
 const PREPARE_MS = 650;
@@ -25,6 +28,7 @@ export const ReviewPanel: React.FC<Props> = ({
   onDecide,
   onRollback,
   onToggleProtected,
+  onGenerateChallenge,
 }) => {
   const [note, setNote] = useState('');
   const [showNoteFor, setShowNoteFor] = useState<DecisionType | null>(null);
@@ -60,9 +64,18 @@ export const ReviewPanel: React.FC<Props> = ({
   const decision = output?.review?.decision ?? null;
   const signals: Signal[] = output?.signals ?? [];
   const execution = output?.execution;
+  const challenge = output?.challenge;
 
   const handleDecide = (d: DecisionType) => {
     if (d === 'challenged') {
+      if (!challenge) {
+        // First click on Challenge: generate the alternative perspective set
+        // and reveal the optional note input. No persisted decision yet —
+        // the user must click Challenge again to commit.
+        onGenerateChallenge?.();
+        setShowNoteFor('challenged');
+        return;
+      }
       if (showNoteFor === 'challenged') {
         onDecide('challenged', note.trim() || undefined);
         setShowNoteFor(null);
@@ -136,8 +149,11 @@ export const ReviewPanel: React.FC<Props> = ({
           </div>
         ) : (
           <>
-            {/* Body */}
+            {/* Body (scrolls) */}
             <div className="flex-1 overflow-y-auto px-6 py-6 space-y-7">
+              {/* Review summary (scannable in <5s) */}
+              {signals.length > 0 && <ReviewSummary signals={signals} />}
+
               {/* Original Prompt */}
               <section data-testid="checkpoint-section-prompt">
                 <div className="text-[11px] tracking-[0.08em] uppercase text-ink-500 font-medium mb-2">
@@ -167,32 +183,39 @@ export const ReviewPanel: React.FC<Props> = ({
                 />
               )}
 
-              {/* Evaluation Signals */}
-              <section data-testid="checkpoint-section-signals">
-                <div className="text-[11px] tracking-[0.08em] uppercase text-ink-500 font-medium mb-2">
-                  Evaluation signals
-                </div>
-                <p className="text-[12px] text-ink-500 mb-3 leading-relaxed">
-                  A lightweight read of where this response may need attention.
-                </p>
-                <div className="flex flex-wrap gap-1.5 mb-3">
-                  {signals.map((s, i) => (
-                    <SignalPill key={`${s.kind}-${i}`} kind={s.kind} label={s.label} />
-                  ))}
-                </div>
-                <ul className="space-y-2.5 mt-3">
-                  {signals.map((s, i) => (
-                    <li
-                      key={`detail-${i}`}
-                      className="text-[13px] text-ink-700 leading-relaxed pl-3 border-l-2 border-line-light"
-                      data-testid={`signal-detail-${s.kind}`}
-                    >
-                      <span className="text-ink-900 font-medium">{s.label}:</span>{' '}
-                      <span className="text-ink-500">{s.detail}</span>
-                    </li>
-                  ))}
-                </ul>
-              </section>
+              {/* Evaluation Signals — details list (pills appear inline in the
+                  conversation now, so this is the explanation surface) */}
+              {signals.length > 0 && (
+                <section data-testid="checkpoint-section-signals">
+                  <div className="text-[11px] tracking-[0.08em] uppercase text-ink-500 font-medium mb-2">
+                    Evaluation signals
+                  </div>
+                  <p className="text-[12px] text-ink-500 mb-3 leading-relaxed">
+                    A lightweight read of where this response may need attention.
+                    Signals are also anchored next to the relevant paragraphs in
+                    the chat.
+                  </p>
+                  <ul className="space-y-2.5">
+                    {signals.map((s, i) => (
+                      <li
+                        key={`detail-${i}`}
+                        className="text-[13px] text-ink-700 leading-relaxed pl-3 border-l-2 border-line-light"
+                        data-testid={`signal-detail-${s.kind}`}
+                      >
+                        <div className="flex items-center gap-1.5 mb-0.5">
+                          <SignalPill kind={s.kind} label={s.label} size="xs" />
+                        </div>
+                        <span className="text-ink-700">{s.detail}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </section>
+              )}
+
+              {/* Challenge results — appears once user has triggered Challenge */}
+              {challenge && (
+                <ChallengeResultsSection results={challenge} />
+              )}
 
               {/* Challenge note input */}
               {showNoteFor === 'challenged' && !decision && (
@@ -201,23 +224,30 @@ export const ReviewPanel: React.FC<Props> = ({
                     className="text-[11px] tracking-[0.08em] uppercase text-ink-500 font-medium mb-2 block"
                     htmlFor="challenge-note"
                   >
-                    What should Claude reconsider? (optional)
+                    Add a note for Claude (optional)
                   </label>
                   <textarea
                     id="challenge-note"
                     value={note}
                     onChange={(e) => setNote(e.target.value)}
                     rows={3}
-                    placeholder="e.g. The third paragraph contradicts an assumption I haven't made…"
+                    placeholder="e.g. The recommendation overlooks our reversibility constraint…"
                     className="w-full bg-white border border-line rounded-xl px-3.5 py-2.5 text-[14px] text-ink-900 placeholder:text-ink-400 focus:border-ink-900 focus:outline-none resize-none transition-colors"
                     data-testid="challenge-note-input"
                   />
+                  <p className="text-[11px] text-ink-400 mt-1.5">
+                    Click <span className="font-medium text-ink-700">Challenge This Output</span>{' '}
+                    again to submit.
+                  </p>
                 </section>
               )}
             </div>
 
-            {/* Footer actions */}
-            <footer className="px-6 py-5 border-t border-line-light bg-panel flex-shrink-0">
+            {/* Sticky footer actions */}
+            <footer
+              className="px-6 py-5 border-t border-line-light bg-panel flex-shrink-0"
+              data-testid="action-bar-footer"
+            >
               <ActionBar
                 onApprove={() => handleDecide('approved')}
                 onReject={() => handleDecide('rejected')}

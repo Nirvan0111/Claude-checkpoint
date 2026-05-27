@@ -49,7 +49,7 @@ export const ActionBar: React.FC<Props> = ({
         data-testid="challenge-action-button"
       >
         <MessageCircleQuestion className="w-4 h-4" strokeWidth={1.75} />
-        Challenge Answer
+        Challenge This Output
       </button>
 
       <div className="grid grid-cols-2 gap-2.5">

@@ -1,6 +1,6 @@
 import { useCallback, useMemo, useRef, useState } from 'react';
-import { CheckpointTarget, DecisionType, ExecutionData, Message, ProtectedFile, Signal } from '../types';
-import { generateMockReply, generateMockSignals } from '../data/mockData';
+import { ChallengeResults, CheckpointTarget, DecisionType, ExecutionData, Message, ProtectedFile } from '../types';
+import { generateMockChallenge, generateMockReply } from '../data/mockData';
 import { generateMockExecution } from '../data/executionMock';
 
 const newId = () => Math.random().toString(36).slice(2, 10);
@@ -21,6 +21,7 @@ interface UseConversationReturn {
   ) => void;
   toggleProtected: (assistantMessageId: string, path: string) => void;
   markRolledBack: (assistantMessageId: string) => void;
+  generateChallenge: (assistantMessageId: string) => ChallengeResults | undefined;
   getMessage: (id: string) => Message | undefined;
   getPromptFor: (assistantMessageId: string) => Message | undefined;
 }
@@ -62,12 +63,12 @@ export function useConversation(): UseConversationReturn {
 
     // Simulate Claude generating a reply (mock).
     window.setTimeout(() => {
-      const signals: Signal[] = generateMockSignals(trimmed);
+      const { content, signals } = generateMockReply(trimmed);
       const execution: ExecutionData = generateMockExecution(trimmed);
       const assistantMsg: Message = {
         id: newId(),
         role: 'assistant',
-        content: generateMockReply(trimmed),
+        content,
         createdAt: nowIso(),
         promptRef: userMsg.id,
         signals,
@@ -147,6 +148,20 @@ export function useConversation(): UseConversationReturn {
     []
   );
 
+  const generateChallenge = useCallback(
+    (assistantMessageId: string): ChallengeResults | undefined => {
+      const m = messageMap.get(assistantMessageId);
+      if (!m) return undefined;
+      if (m.challenge) return m.challenge;
+      const challenge = generateMockChallenge(m.content);
+      setMessages((prev) =>
+        prev.map((msg) => (msg.id === assistantMessageId ? { ...msg, challenge } : msg))
+      );
+      return challenge;
+    },
+    [messageMap]
+  );
+
   return {
     conversationId: conversationIdRef.current,
     messages,
@@ -158,6 +173,7 @@ export function useConversation(): UseConversationReturn {
     applyDecision,
     toggleProtected,
     markRolledBack,
+    generateChallenge,
     getMessage,
     getPromptFor,
   };
