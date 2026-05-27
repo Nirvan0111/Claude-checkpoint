@@ -62,13 +62,28 @@ export const ReviewSummary: React.FC<Props> = ({ signals }) => {
     accent: KIND_DEFS[k].accent,
   }));
 
+  const totalFindings = signals.length;
+
   return (
     <section
       className="bg-bubble/40 border border-line-light rounded-xl px-4 py-3.5"
       data-testid="review-summary"
     >
-      <div className="text-[11px] tracking-[0.08em] uppercase text-ink-500 font-medium mb-2">
-        Review summary
+      <div className="flex items-center justify-between gap-2 mb-2">
+        <span className="text-[11px] tracking-[0.08em] uppercase text-ink-500 font-medium">
+          Review summary
+        </span>
+        <span
+          className={`inline-flex items-center rounded-full border px-2 py-0.5 text-[10px] font-medium tabular-nums tracking-wide transition-colors duration-200 ${
+            totalFindings > 0
+              ? 'bg-white border-line text-ink-700'
+              : 'bg-bubble/60 border-line-light text-ink-400'
+          }`}
+          data-testid="review-summary-findings-badge"
+          aria-label={`${totalFindings} ${totalFindings === 1 ? 'finding' : 'findings'}`}
+        >
+          {totalFindings} {totalFindings === 1 ? 'finding' : 'findings'}
+        </span>
       </div>
       <ul className="space-y-1.5">
         {items.map(({ kind, count, label, zeroLabel, icon: Icon, accent }) => (

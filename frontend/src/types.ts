@@ -15,6 +15,9 @@ export interface Signal {
   // Optional anchor: index of the assistant content paragraph this signal
   // refers to. Used to render the pill inline next to the relevant text.
   paragraphIndex?: number;
+  // Optional list of phrases that triggered this signal. Surfaced in the
+  // hover tooltip on inline pills so users can see why the detector fired.
+  triggers?: string[];
 }
 
 export type DecisionType = 'approved' | 'rejected' | 'challenged' | 'rolled_back';

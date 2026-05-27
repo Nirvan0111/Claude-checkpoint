@@ -52,5 +52,6 @@ export function mapDetectionsToSignals(
     label: KIND_LABEL[d.kind],
     detail: detailFor(d),
     paragraphIndex: Math.min(d.paragraphIndex, lastIdx),
+    triggers: d.matches,
   }));
 }

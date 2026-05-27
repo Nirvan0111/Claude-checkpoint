@@ -38,7 +38,8 @@ function renderAssistantParagraph(text: string, key: number, signalsForParagraph
               kind={s.kind}
               label={s.label}
               size="xs"
-              title={s.detail}
+              detail={s.detail}
+              triggers={s.triggers}
             />
           ))}
         </div>

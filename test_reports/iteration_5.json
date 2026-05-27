@@ -1,0 +1,36 @@
+{
+  "summary": "Iteration 5 — Claude Checkpoint pre-deployment polish pass fully verified. All three polish items pass + full regression of Phase 1/2/3 flows.\n\nPolish #1 (tooltip on inline evaluation pills): VERIFIED. Hovering 'Context Required' inline pill makes data-testid='signal-tooltip-context' appear with opacity 1, containing label 'Context Required' + 'Triggered because key context appears missing from the prompt.' + chip 'team size'. Tooltip positioned ABOVE the pill (tooltip.y=215 vs pill.y=322 — uses bottom-full mb-1.5). Pill has tabIndex=0, aria-label='Context Required. Triggered because key context appears missing from the prompt. Triggers: team size.', NO native title attribute (avoids double tooltip). Focus also reveals tooltip via group-focus-within (opacity=1 on focus). role='tooltip' present on tooltip element. Panel detail-list pills inside checkpoint-section-signals correctly DO NOT render a tooltip (they pass no detail/triggers, so hasRichTooltip=false and the tooltip span is not rendered).\n\nPolish #2 (findings badge): VERIFIED. data-testid='review-summary-findings-badge' appears beside REVIEW SUMMARY header. Count exactly matches signal-detail-<kind> count in panel (e.g. badge='3 findings' when 3 signal-detail items present; badge='5 findings' when 5 present, capped at engine max). Singular 'finding' / plural 'findings' switch verified. Tested across multiple prompts (different char-sums cycle through 4 mock replies) — badge updates dynamically each time, all matched.\n\nPolish #3 (li>li DOM nesting fix): VERIFIED. document.querySelectorAll('li').filter(li=>li.querySelector('li')!==null).length === 0 in every state tested, including Activity Timeline collapsed AND fully expanded (8 of 8 events). TimelineItem root is now <div>, wrapped by outer <li> in ActivityTimeline — list semantics retained (ul>li>div). All 8 of 8 timeline items still carry the color-coded border-l-2 class on the wrapping <li>. Zero validateDOMNesting console warnings observed across the entire flow.\n\nRegression: Approve/Reject/Rollback/Challenge two-step all post to /api/reviews and render decision-badge-approved / decision-badge-rejected / decision-badge-rolled_back / decision-badge-challenged correctly. Challenge step 1 reveals challenge-results-section (with 4 blocks: alternative perspective, potential weakness, missing considerations, failure scenarios) + challenge-note-input WITHOUT posting (decision-badge-challenged count = 0 before second click). Step 2 commits and shows inline-challenge-<id>. Execution Review (Execution Summary KPIs '3 files changed / 1 file created / 9 tests passed / 0 protected files modified', Protected Files panel with Locked/Editable toggle buttons — 5 Locked + 3 Editable labels observed, Activity Timeline counter '8 of 8 events', expand/collapse toggle) all behave as before. Sticky action-bar-footer remains visible after scrolling panel body. Backend pytest 11/11 PASS. Frontend yarn build clean (84.79 kB main.js, zero TS/ESLint errors, matches main agent's reported size).",
+  "backend_issues": {
+    "critical": [],
+    "minor": []
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_reviews_api.py",
+    "/app/test_reports/pytest/pytest_results.xml"
+  ],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "SignalPill.tsx now correctly gates the rich tooltip on hasRichTooltip = !!detail || (triggers && triggers.length > 0). Detail-list pills in ReviewPanel pass no detail/triggers so hasRichTooltip=false → tooltip span not rendered AND tabIndex undefined AND native title preserved as fallback. Backward compatible with the legacy `title` prop.",
+    "Tooltip uses Tailwind group/pill arbitrary group name — multiple pills in the same paragraph each scope their own group-hover/group-focus-within independently. Verified visually with two pills (Context Required + Assumption) sharing a paragraph row.",
+    "ReviewSummary.tsx — header layout changed to flex-row with justify-between; findings badge has subtle state-styling (white bg when count>0, muted when count==0) and uses aria-label for screen readers. Pluralisation logic uses ternary (totalFindings === 1 ? 'finding' : 'findings') — correct including 0 → 'findings' (idiomatic English).",
+    "TimelineItem.tsx — root <li> → <div> change is minimal and preserves data-testid + classes. ActivityTimeline.tsx outer <ul><li> retains border-l-2 color accent (visually identical to before).",
+    "AnnotationMapper.ts — adding `triggers: d.matches` to each mapped Signal is a non-breaking additive change. The Signal interface marks triggers as optional, so existing consumers (ReviewPanel detail rendering) are unaffected.",
+    "Carryover from iteration_4: VerificationDetector's regex /\\bv?\\d+(?:\\.\\d+){1,2}\\b/ — still works correctly. Worth bounding in a follow-up but not blocking. No false positives in this iteration either."
+  ],
+  "updated_files": [],
+  "success_rate": {
+    "backend": "100% (11/11 pytest)",
+    "frontend": "100% on all polish + regression assertions (tooltip render, tooltip positioning above pill, tooltip a11y attrs, focus reveals tooltip, findings badge count match, badge pluralisation, badge dynamism across prompts, zero li>li nesting, color-coded timeline borders preserved, expand/collapse toggle, approve/reject/rollback/challenge two-step flow, sticky footer, zero console errors, zero validateDOMNesting warnings)"
+  },
+  "test_credentials": "N/A",
+  "seed_data_creation": "Added ~5 reviews to claude_checkpoint.reviews via the live UI (one each of approved, rejected, rolled_back, challenged with note 'Note for challenge', and 'Need version compat check').",
+  "retest_needed": false,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "All three polish items shipped cleanly with zero functional regressions. Key new selectors: data-testid='signal-pill-<kind>-wrapper' (outer group root, always present for inline + panel pills), data-testid='signal-pill-<kind>' (inner pill, focusable when rich tooltip), data-testid='signal-tooltip-<kind>' (only rendered when detail or triggers present — i.e. inline only), data-testid='review-summary-findings-badge'. Important Playwright caveat: when the Checkpoint panel is open, [data-testid='checkpoint-backdrop'] (fixed inset-0 z-30) intercepts pointer events for everything in the chat area — to hover inline pills programmatically the panel must be CLOSED first. Tooltip visibility can also be confirmed via aria-label inspection (always present) + computed opacity (0 default → 1 on hover/focus). DOM-nesting fix verified: 0 li.querySelector('li') matches in any state. Backend pytest path unchanged: /app/backend/tests/test_reviews_api.py — 11/11 PASS.",
+  "rca_of_the_issue": "N/A — no functional bug. Polish-only pass."
+}

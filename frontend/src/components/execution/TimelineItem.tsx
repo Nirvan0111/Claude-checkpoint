@@ -35,7 +35,7 @@ const KIND_ACCENT: Record<TimelineActionKind, string> = {
 export const TimelineItem: React.FC<Props> = ({ event }) => {
   const Icon = KIND_ICON[event.action];
   return (
-    <li
+    <div
       className="flex items-start gap-3 py-2"
       data-testid={`timeline-item-${event.action}-${event.target}`}
     >
@@ -52,7 +52,7 @@ export const TimelineItem: React.FC<Props> = ({ event }) => {
         </div>
         <p className="text-[12px] text-ink-500 leading-snug mt-0.5">{event.description}</p>
       </div>
-    </li>
+    </div>
   );
 };
 
