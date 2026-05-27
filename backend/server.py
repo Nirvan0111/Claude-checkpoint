@@ -99,25 +99,31 @@ async def health():
     return {"status": "ok", "service": "claude-checkpoint"}
 
 
-@app.post("/api/reviews", response_model=ReviewDecision)
+def _serialize(decision: ReviewDecision) -> dict:
+    # Serialize with `id` (not `_id`) so the public API contract uses `id`.
+    return decision.model_dump(by_alias=False)
+
+
+@app.post("/api/reviews")
 async def create_review(payload: ReviewDecisionCreate):
     decision = ReviewDecision(**payload.model_dump())
     result = await db.reviews.insert_one(decision.to_mongo())
     decision.id = str(result.inserted_id)
-    return decision
+    return _serialize(decision)
 
 
-@app.get("/api/reviews", response_model=List[ReviewDecision])
+@app.get("/api/reviews")
 async def list_reviews(conversation_id: Optional[str] = None, limit: int = 100):
+    limit = max(1, min(limit, 500))
     query = {}
     if conversation_id:
         query["conversation_id"] = conversation_id
     cursor = db.reviews.find(query).sort("created_at", -1).limit(limit)
     docs = await cursor.to_list(length=limit)
-    return [ReviewDecision.from_mongo(d) for d in docs]
+    return [_serialize(ReviewDecision.from_mongo(d)) for d in docs]
 
 
-@app.get("/api/reviews/{review_id}", response_model=ReviewDecision)
+@app.get("/api/reviews/{review_id}")
 async def get_review(review_id: str):
     try:
         doc = await db.reviews.find_one({"_id": ObjectId(review_id)})
@@ -125,4 +131,4 @@ async def get_review(review_id: str):
         raise HTTPException(status_code=400, detail="Invalid review id")
     if not doc:
         raise HTTPException(status_code=404, detail="Review not found")
-    return ReviewDecision.from_mongo(doc)
+    return _serialize(ReviewDecision.from_mongo(doc))

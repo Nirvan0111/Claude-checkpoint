@@ -32,7 +32,6 @@ const Shell: React.FC = () => {
 
   const toast = useToast();
   const armedRef = useRef(false);
-  const lastMessageId = messages.length ? messages[messages.length - 1].id : null;
   const scrollAnchor = useRef<HTMLDivElement>(null);
 
   // Auto-scroll to bottom when messages change
@@ -124,13 +123,7 @@ const Shell: React.FC = () => {
             <ConversationMessage
               key={m.id}
               message={m}
-              onOpenCheckpoint={
-                m.role === 'assistant' && m.id === lastMessageId
-                  ? openCheckpoint
-                  : m.role === 'assistant'
-                    ? openCheckpoint
-                    : undefined
-              }
+              onOpenCheckpoint={m.role === 'assistant' ? openCheckpoint : undefined}
             />
           ))}
 
