@@ -69,6 +69,28 @@ Constraints throughout: Claude-inspired calm, paper-like aesthetic; no enterpris
 - Iteration 1: Backend 10/10, full E2E green (after fixing `_id` → `id` response leak)
 - Iteration 2: Backend 11/11 (adds `rolled_back` test), full E2E green on all new Phase 1 refinements and Phase 2 Execution Review surfaces
 
+### Phase 3 — Evaluation Layer MVP — 2026-05-27
+- New `frontend/src/lib/evaluation/` module (pure logic, no UI):
+  - `EvaluationEngine.ts` — public `evaluate({prompt, output}): Signal[]`. Pure, deterministic, replaceable later by a real Claude-graded evaluator with identical signature.
+  - `AssumptionDetector.ts` — hedging language (should, likely, typically, generally, comfortably, without downtime, assume) + recommendation language (recommended, best practice, ideal, optimal, preferred, commonly used).
+  - `ContextDetector.ts` — 7 dimensions checked against the prompt for absence (traffic volume, budget, deployment env, audience, timeline, requirements/constraints, team size). Signals anchored to the matching output paragraph; last-paragraph fallback when no anchor.
+  - `VerificationDetector.ts` — technical claim markers (API, version numbers, framework/library names, compatibility, migration, deprecation, operational claims).
+  - `AnnotationMapper.ts` — Detection → Signal mapping with merged-`matches`-to-detail-string composition.
+  - `ReviewSummaryGenerator.ts` — pure `summarize(signals)` counts function (UI summary component unchanged).
+  - `types.ts` + `index.ts` — internal types and public exports.
+- Dedup rule: at most 1 signal per (kind, paragraph); multiple regex matches in the same detector merge into one signal with combined detail.
+- Density caps: max 1 Assumption + 1 Context Required + 1 Needs Verification per paragraph; total ≤ 5 per output.
+- Priority order when culling: Context Required → Needs Verification → Assumption.
+- `data/mockData.ts` simplified — `generateMockReply` returns only `{ content }`; hardcoded per-reply signal arrays removed. `generateMockChallenge` untouched.
+- `state/useConversation.ts` — calls `evaluate({prompt, output})` after generating mock reply text; engine is the sole source of signals.
+- ZERO changes to UI components, ReviewSummary layout (4-row layout including "no supporting sources" zero-state preserved by design), Execution Review, Challenge flow, sticky ActionBar, or backend.
+
+### Testing — Iteration 4
+- Backend: 11/11 pytest pass.
+- Frontend build: 84.23 kB main.js gzipped, zero TS errors, zero ESLint failures.
+- Phase 3 assertions (20/20): all three Phase 3 signal kinds produced; total signals ≤ 5; dedup per (kind, paragraph) enforced; priority order (context → verification → assumption) verified in panel; dynamic ReviewSummary counts match panel detail counts; "no supporting sources" zero-state preserved; recommendation language correctly triggers Assumption signals; inline annotations render under correct paragraphs via paragraphIndex.
+- Phase 1+2 regression: Approve / Challenge two-step / Rollback all confirmed working; sticky footer + ESC close work; backend POST /api/reviews succeeds for all four decisions.
+
 ## Prioritized Backlog
 
 ### P1
@@ -86,6 +108,8 @@ Constraints throughout: Claude-inspired calm, paper-like aesthetic; no enterpris
 - Auth (deferred — not in scope yet)
 
 ## Next Tasks
-1. Decide Phase 3 scope: live execution payloads vs. real LLM responses vs. decisions analytics
-2. Optionally add a 'Decisions' tab/section powered by `/api/reviews`
-3. Surface per-file expand/collapse memory across panel opens
+1. Swap deterministic `lib/evaluation` engine for a real Claude-graded evaluator (same `Signal[]` signature, no UI changes needed).
+2. Address carryover non-blocking warning: `<li>` inside `<li>` in `components/execution/ActivityTimeline.tsx` (change outer wrapper to `<div>`).
+3. Optionally tighten `VerificationDetector` version regex to avoid false positives on bare numbers in noisy LLM output.
+4. Decide whether to add a 'Decisions' tab/section powered by `/api/reviews`.
+5. Surface per-file expand/collapse memory across panel opens.
