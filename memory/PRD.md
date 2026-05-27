@@ -91,6 +91,17 @@ Constraints throughout: Claude-inspired calm, paper-like aesthetic; no enterpris
 - Phase 3 assertions (20/20): all three Phase 3 signal kinds produced; total signals ≤ 5; dedup per (kind, paragraph) enforced; priority order (context → verification → assumption) verified in panel; dynamic ReviewSummary counts match panel detail counts; "no supporting sources" zero-state preserved; recommendation language correctly triggers Assumption signals; inline annotations render under correct paragraphs via paragraphIndex.
 - Phase 1+2 regression: Approve / Challenge two-step / Rollback all confirmed working; sticky footer + ESC close work; backend POST /api/reviews succeeds for all four decisions.
 
+### Pre-deployment polish pass — 2026-05-27
+- **Signal tooltips** (`SignalPill.tsx`): inline evaluation pills now show a lightweight Claude-style hover/focus tooltip with the kind label, a one-line "Triggered because…" reason, and the actual trigger phrase chips. CSS-only (Tailwind `group/pill`), accessible (tabIndex, role='tooltip', composed aria-label), no popups/modals. Detail-list pills in the panel are unaffected (no detail/triggers passed → tooltip not rendered).
+- **Findings badge** (`ReviewSummary.tsx`): compact "N findings" pill sits beside the REVIEW SUMMARY header. Count = `signals.length`, dynamic, pluralised. Subtle treatment (no cards/charts).
+- **DOM nesting fix** (`execution/TimelineItem.tsx`): root `<li>` → `<div>`. Outer `<ul><li>` wrapper in `ActivityTimeline.tsx` retained so semantic list structure remains valid (`ul > li > div`). Zero `validateDOMNesting` warnings.
+- Type system: optional `triggers?: string[]` added to `Signal` (additive, backward-compatible). Populated by `AnnotationMapper`.
+
+### Testing — Iteration 5
+- Backend: 11/11 pytest pass.
+- Frontend build: 84.79 kB gz main.js (+551 B), zero TS/ESLint errors.
+- All three polish items + full Phase 1/2/3 regression: 100% green. Zero console warnings/errors.
+
 ## Prioritized Backlog
 
 ### P1
