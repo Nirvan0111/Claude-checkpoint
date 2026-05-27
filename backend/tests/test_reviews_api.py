@@ -4,7 +4,7 @@ import uuid
 import pytest
 import requests
 
-BASE_URL = os.environ.get("REACT_APP_BACKEND_URL", "https://1cc598d1-a350-4eff-a2a3-7e65b0172f2a.preview.emergentagent.com").rstrip("/")
+BASE_URL = os.environ.get("REACT_APP_BACKEND_URL", "https://eval-signals.preview.emergentagent.com").rstrip("/")
 API = f"{BASE_URL}/api"
 
 
