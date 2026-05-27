@@ -1,0 +1,101 @@
+{
+  "project_name": "Claude Checkpoint",
+  "theme": "Light",
+  "archetype": "1 - Organic & Earthy (Calm, paper-like productivity)",
+  "design_philosophy": "Clean, minimal interface, Conversation-first experience, Large whitespace, Soft neutral color palette, Subtle borders and shadows, Rounded corners, Clear typography hierarchy, Low visual noise.",
+  "typography": {
+    "fonts": {
+      "headings": "Spectral, serif",
+      "body": "Figtree, sans-serif",
+      "mono": "JetBrains Mono, monospace"
+    },
+    "scale": {
+      "h1": "text-3xl md:text-4xl tracking-tight leading-tight",
+      "h2": "text-xl md:text-2xl tracking-tight leading-snug",
+      "h3": "text-lg font-medium",
+      "body": "text-base leading-relaxed text-stone-800",
+      "small": "text-sm text-stone-500",
+      "tiny": "text-xs tracking-[0.02em] uppercase font-medium"
+    },
+    "rules": "Avoid Inter or generic sans for headings. Use Spectral for a warm, editorial, intelligent AI feel, paired with Figtree for highly legible chat content."
+  },
+  "colors": {
+    "background": {
+      "app": "#F9F8F6",
+      "panel": "#FFFFFF",
+      "input": "#FFFFFF",
+      "user_bubble": "#F0EFEA",
+      "hover_state": "#F4F3EE"
+    },
+    "text": {
+      "primary": "#242220",
+      "secondary": "#6B6661",
+      "tertiary": "#9A958F",
+      "inverse": "#FFFFFF"
+    },
+    "border": {
+      "default": "#E5E3D8",
+      "light": "#F0EFEA",
+      "focus": "#D4A373"
+    },
+    "accents": {
+      "primary": "#242220",
+      "secondary": "#E5E3D8",
+      "pill_assumption": "bg-[#FFF6ED] text-[#9A3412] border-[#FED7AA]",
+      "pill_context": "bg-[#EFF6FF] text-[#1E40AF] border-[#BFDBFE]",
+      "pill_verification": "bg-[#FEFCE8] text-[#854D0E] border-[#FEF08A]",
+      "pill_source": "bg-[#F0FDF4] text-[#166534] border-[#BBF7D0]"
+    }
+  },
+  "layout_and_spacing": {
+    "container": "w-full max-w-3xl mx-auto px-4 sm:px-6",
+    "chat_area": "flex flex-col gap-8 py-12 pb-40",
+    "side_panel": "fixed top-0 right-0 h-full w-full md:w-[400px] bg-white border-l border-[#E5E3D8] shadow-[0_0_40px_rgba(0,0,0,0.05)] z-40 transform transition-transform duration-300 ease-out",
+    "input_dock": "fixed bottom-0 left-0 w-full bg-gradient-to-t from-[#F9F8F6] via-[#F9F8F6] to-transparent pb-8 pt-12"
+  },
+  "components": {
+    "message_bubble": {
+      "user": "bg-[#F0EFEA] rounded-2xl rounded-tr-sm px-5 py-4 max-w-[85%] self-end text-[#242220] text-[15px] leading-relaxed",
+      "assistant": "bg-transparent rounded-2xl px-2 py-4 max-w-[100%] self-start text-[#242220] font-serif text-[17px] leading-loose"
+    },
+    "input_area": {
+      "container": "relative w-full max-w-3xl mx-auto flex items-end gap-3 bg-white border border-[#E5E3D8] rounded-2xl p-2.5 shadow-sm focus-within:ring-1 focus-within:ring-[#E5E3D8] focus-within:border-[#242220] transition-all duration-200",
+      "textarea": "w-full bg-transparent border-none focus:ring-0 resize-none py-2 px-1 text-[15px] max-h-48 text-[#242220] placeholder:text-[#9A958F]",
+      "action_menu_trigger": "p-2 text-[#6B6661] hover:text-[#242220] rounded-xl hover:bg-[#F0EFEA] transition-colors flex-shrink-0 mb-0.5",
+      "send_button": "p-2 text-white bg-[#242220] hover:bg-[#3E3C3A] rounded-xl transition-colors flex-shrink-0 mb-0.5"
+    },
+    "signal_pill": {
+      "base": "inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-medium border"
+    },
+    "action_buttons": {
+      "approve": "bg-[#242220] text-white hover:bg-[#3E3C3A] rounded-xl px-5 py-2.5 text-sm font-medium transition-colors w-full flex justify-center items-center",
+      "reject": "bg-white text-[#242220] border border-[#E5E3D8] hover:bg-[#F0EFEA] rounded-xl px-5 py-2.5 text-sm font-medium transition-colors w-full flex justify-center items-center",
+      "challenge": "bg-white text-[#9A3412] border border-[#FED7AA] hover:bg-[#FFF6ED] rounded-xl px-5 py-2.5 text-sm font-medium transition-colors w-full flex justify-center items-center"
+    },
+    "decision_badge": {
+      "base": "inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium border mt-3",
+      "approved": "bg-[#F0FDF4] border-[#BBF7D0] text-[#166534]",
+      "rejected": "bg-[#FEF2F2] border-[#FECACA] text-[#991B1B]",
+      "challenged": "bg-[#FFF6ED] border-[#FED7AA] text-[#9A3412]"
+    }
+  },
+  "interaction_and_motion": {
+    "hover_states": "Use subtle background shifts for interactive elements. Avoid heavy drop shadows on hover.",
+    "transitions": "Use 'transition-all duration-200 ease-out' for micro-interactions.",
+    "panel_slide": "TranslateX(100%) to TranslateX(0) with 300ms ease-out. Ensure smooth easing."
+  },
+  "testing_requirements": {
+    "data_testid": "ALL interactive elements MUST have a 'data-testid' attribute in kebab-case format. E.g., 'data-testid=\"checkpoint-trigger-button\"', 'data-testid=\"approve-action-button\"', 'data-testid=\"chat-input-textarea\"'."
+  },
+  "image_urls": {},
+  "instructions_to_main_agent": [
+    "Build the application using pure React and Tailwind CSS. Use customized Shadcn components where logic is complex (like the action dropdown menu), but ensure they match this paper-like, flat aesthetic.",
+    "Add 'Spectral' and 'Figtree' to the project via Google Fonts.",
+    "Implement the Checkpoint Review as a sliding Side Panel on the right side of the screen (NOT a centered modal), pushing or overlaying the main content subtly.",
+    "Ensure 'data-testid' is attached to all buttons, menus, inputs, and inline decision badges for robust testing.",
+    "Do NOT implement dark mode. The application is strictly Light theme.",
+    "Keep spacing generous. Use padding `p-6` or `p-8` inside the side panel to let content breathe.",
+    "Do not use generic blue tones for primary actions; use the specified dark charcoal (#242220) to mimic Anthropic's muted, professional aesthetic.",
+    "Use Lucide-React for all icons to maintain low visual noise."
+  ]
+}
