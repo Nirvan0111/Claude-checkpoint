@@ -7,6 +7,7 @@ import ChatInput from './components/ChatInput';
 import ReviewPanel from './components/ReviewPanel';
 import WelcomeState from './components/WelcomeState';
 import TypingIndicator from './components/TypingIndicator';
+import Sidebar from './components/Sidebar';
 import { DecisionType } from './types';
 import { postReview, signalsToStrings } from './lib/api';
 
@@ -115,77 +116,85 @@ const Shell: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-app flex flex-col">
-      {/* Top bar */}
-      <header
-        className="sticky top-0 z-20 bg-app/85 backdrop-blur-sm border-b border-line-light"
-        data-testid="top-bar"
-      >
-        <div className="w-full max-w-3xl mx-auto px-4 sm:px-6 h-14 flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <span className="w-7 h-7 rounded-lg bg-ink-900 text-white flex items-center justify-center">
-              <ShieldCheck className="w-3.5 h-3.5" strokeWidth={1.75} />
-            </span>
-            <div className="font-serif text-[15px] text-ink-900 leading-none">
-              Claude Checkpoint
+    <div className="h-screen flex bg-app overflow-hidden">
+      {/* Claude-style left sidebar */}
+      <Sidebar onNewChat={() => window.location.reload()} />
+
+      {/* Main column — conversation + composer */}
+      <div className="flex-1 flex flex-col min-w-0 h-screen">
+        {/* Top bar */}
+        <header
+          className="sticky top-0 z-20 bg-app/85 backdrop-blur-sm border-b border-line-light flex-shrink-0"
+          data-testid="top-bar"
+        >
+          <div className="w-full max-w-3xl mx-auto px-4 sm:px-6 h-14 flex items-center justify-between">
+            <div className="flex items-center gap-2 md:invisible">
+              <span className="w-7 h-7 rounded-lg bg-ink-900 text-white flex items-center justify-center">
+                <ShieldCheck className="w-3.5 h-3.5" strokeWidth={1.75} />
+              </span>
+              <div className="font-serif text-[15px] text-ink-900 leading-none">
+                Claude Checkpoint
+              </div>
             </div>
-          </div>
-          <div
-            className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full border text-[11px] font-medium transition-colors duration-300 ${
-              checkpointActive
-                ? 'bg-[#F0FDF4] border-[#BBF7D0] text-[#166534]'
-                : 'bg-white border-line text-ink-500'
-            }`}
-            data-testid="checkpoint-status"
-            aria-live="polite"
-          >
-            <span
-              className={`w-1.5 h-1.5 rounded-full ${
-                checkpointActive ? 'bg-[#16A34A]' : 'bg-ink-400'
+            <div
+              className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full border text-[11px] font-medium transition-colors duration-300 ${
+                checkpointActive
+                  ? 'bg-[#F0FDF4] border-[#BBF7D0] text-[#166534]'
+                  : 'bg-white border-line text-ink-500'
               }`}
-            />
-            {checkpointActive ? 'Checkpoint active' : 'Checkpoint inactive'}
-          </div>
-        </div>
-      </header>
-
-      {/* Conversation */}
-      <main className="flex-1 w-full">
-        <div className="w-full max-w-3xl mx-auto px-4 sm:px-6 flex flex-col gap-8 py-2 pb-44">
-          {messages.length === 0 && (
-            <WelcomeState onSuggestion={(s) => sendPrompt(s)} />
-          )}
-
-          {messages.map((m) => (
-            <ConversationMessage
-              key={m.id}
-              message={m}
-              onOpenCheckpoint={m.role === 'assistant' ? openCheckpoint : undefined}
-            />
-          ))}
-
-          {isTyping && (
-            <div className="flex flex-col items-start" data-testid="assistant-typing">
-              <TypingIndicator />
+              data-testid="checkpoint-status"
+              aria-live="polite"
+            >
+              <span
+                className={`w-1.5 h-1.5 rounded-full ${
+                  checkpointActive ? 'bg-[#16A34A]' : 'bg-ink-400'
+                }`}
+              />
+              {checkpointActive ? 'Checkpoint active' : 'Checkpoint inactive'}
             </div>
-          )}
+          </div>
+        </header>
 
-          <div ref={scrollAnchor} />
-        </div>
-      </main>
+        {/* Conversation (scrolls) */}
+        <main className="flex-1 overflow-y-auto">
+          <div className="w-full max-w-3xl mx-auto px-4 sm:px-6 flex flex-col gap-8 py-2 pb-8">
+            {messages.length === 0 && (
+              <WelcomeState onSuggestion={(s) => sendPrompt(s)} />
+            )}
 
-      <ChatInput
-        onSend={sendPrompt}
-        onActivateCheckpointHint={() => {
-          armedRef.current = true;
-          setArmed(true);
-        }}
-        onCancelArmed={() => {
-          armedRef.current = false;
-          setArmed(false);
-        }}
-      />
+            {messages.map((m) => (
+              <ConversationMessage
+                key={m.id}
+                message={m}
+                onOpenCheckpoint={m.role === 'assistant' ? openCheckpoint : undefined}
+              />
+            ))}
 
+            {isTyping && (
+              <div className="flex flex-col items-start" data-testid="assistant-typing">
+                <TypingIndicator />
+              </div>
+            )}
+
+            <div ref={scrollAnchor} />
+          </div>
+        </main>
+
+        {/* Composer — pinned to bottom of main column */}
+        <ChatInput
+          onSend={sendPrompt}
+          onActivateCheckpointHint={() => {
+            armedRef.current = true;
+            setArmed(true);
+          }}
+          onCancelArmed={() => {
+            armedRef.current = false;
+            setArmed(false);
+          }}
+        />
+      </div>
+
+      {/* Review panel — overlays from the right; behaviour unchanged */}
       <ReviewPanel
         open={!!checkpointTarget}
         prompt={checkpointPrompt}

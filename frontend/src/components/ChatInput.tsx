@@ -120,7 +120,10 @@ export const ChatInput: React.FC<Props> = ({
   };
 
   return (
-    <div className="fixed bottom-0 left-0 w-full bg-gradient-to-t from-app via-app to-transparent pb-6 pt-10 px-4 z-30">
+    <div
+      className="flex-shrink-0 bg-gradient-to-t from-app via-app to-transparent pb-6 pt-8 px-4"
+      data-testid="chat-input-region"
+    >
       <div className="relative w-full max-w-3xl mx-auto">
         {checkpointArmed && (
           <div
