@@ -1,0 +1,44 @@
+{
+  "summary": "First test pass for Claude Checkpoint MVP. Backend (10/10 pytest cases) and Frontend (full E2E flow incl. welcome, mock reply, action menu, armed checkpoint, side panel sections, approve/reject/challenge two-step, ESC/close, inline triggers, decision badges, toasts, and backend persistence) all PASS. One backend contract bug: POST/GET /api/reviews return the Mongo `_id` field instead of `id` (alias leakage). UI is unaffected because the frontend does not consume the returned id, but the API contract violates the project rule of excluding Mongo `_id`.",
+  "backend_issues": {
+    "critical": [
+      {
+        "endpoint": "POST/GET /api/reviews, GET /api/reviews/{id}",
+        "issue": "Response body returns `_id` (Mongo ObjectId-as-string) instead of `id`. Root cause: `BaseDocument` has `id: Optional[PyObjectId] = Field(default=None, alias=\"_id\")` and FastAPI serializes response_model with by_alias=True by default for fields that have an alias when `populate_by_name=True`. Fix: either set `model_config = ConfigDict(populate_by_name=True, serialize_by_alias=False)` (pydantic v2) or override the route to `return decision.model_dump(by_alias=False)`, or rename alias handling so the public field is `id`.",
+        "priority": "HIGH"
+      }
+    ],
+    "minor": []
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": [
+      {"screen": "Action menu",
+       "issues": ["Minor: disabled MenuItem buttons (`action-menu-attach/image/style`) still have hover cursor styling on the inner icon container; visually fine but might confuse users that they are clickable. Low priority."]}
+    ]
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_reviews_api.py",
+    "/app/test_reports/pytest/pytest_results.xml"
+  ],
+  "action_items": [
+    "Fix response serialization so /api/reviews endpoints return `id` (string) instead of `_id`. The Pydantic model currently uses alias=_id which is leaking to the API response. Adjust model_config (e.g., model_dump with by_alias=False on return, or remove alias for response model)."
+  ],
+  "critical_code_review_comments": [
+    "server.py: response leaks Mongo `_id` because of alias serialization. Use a separate output model (e.g., ReviewDecisionOut with `id: str` and no alias) or convert before returning.",
+    "server.py: `list_reviews` does not validate `limit` upper-bound (could be abused with very large values).",
+    "frontend/App.tsx lines 127-133: ternary always returns `openCheckpoint` for assistant messages (both branches identical). Can be simplified to `m.role === 'assistant' ? openCheckpoint : undefined`.",
+    "Files are small and well-structured; no >700 line files found."
+  ],
+  "updated_files": [
+    "/app/backend/tests/test_reviews_api.py (new)"
+  ],
+  "success_rate": {"backend": "100% (10/10 tests pass; 1 contract bug noted)", "frontend": "100% (all targeted flows pass)"},
+  "test_credentials": "N/A (no auth in app)",
+  "seed_data_creation": "Inserted ~5 TEST_ prefixed reviews during pytest run + a few via UI flow. All in `claude_checkpoint.reviews` collection.",
+  "retest_needed": true,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "Backend test file at /app/backend/tests/test_reviews_api.py currently tolerates both `id` and `_id` in response (see TestReviews.test_create_review_approved). After main agent fixes the `_id` leakage, tighten the assertion to require `id` and forbid `_id`. UI Playwright flow was verified end-to-end on the public REACT_APP_BACKEND_URL.",
+  "rca_of_the_issue": "POST /api/reviews returns `{\"_id\": \"6a16...\", ...}` instead of `{\"id\": \"...\", ...}`. Reproduction: `curl -s -X POST $BACKEND/api/reviews -H 'Content-Type: application/json' -d '{\"message_id\":\"m1\",\"conversation_id\":\"c1\",\"decision\":\"approved\",\"prompt\":\"p\",\"output\":\"o\",\"signals\":[]}' | jq`. The response key is `_id`. Mitigation: in server.py, define a dedicated output model without alias, or return `decision.model_dump(by_alias=False)`. This is a backend-only fix; the frontend currently ignores the returned identifier so no UI changes required."
+}
