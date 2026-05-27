@@ -1,175 +1,42 @@
-import { ChallengeResults, Signal } from '../types';
+import { ChallengeResults } from '../types';
 
-// Each mock reply now carries its own contextual signal set, anchored to
-// specific paragraphs so the UI can render pills inline alongside the
-// statements they refer to.
+// Mock assistant reply bodies. Evaluation signals are no longer baked in —
+// they are produced by the EvaluationEngine (`lib/evaluation`) from the
+// generated text + the prompt. This file is intentionally content-only so
+// it can be swapped for a real LLM caller without touching the evaluation
+// layer.
 
-interface MockReply {
-  content: string;
-  signals: Signal[];
-}
+const REPLIES: string[] = [
+  `Here is a concise take on your question. I've outlined the main considerations and a recommended path forward.
 
-const REPLIES: MockReply[] = [
-  {
-    content: `Here is a concise take on your question. I've outlined the main considerations and a recommended path forward.
+The simplest version should ship first and validate the core assumption in production. Typically this means a feature flag, a small audience, and a single success metric you can measure within a week.
 
-1. Start with the simplest version that produces a measurable result.
-2. Validate the assumptions in your environment before expanding scope.
-3. Iterate based on the signals you collect.
+Once the initial signal is in, iterate based on what you observe. Most teams generally find that the first version reveals which constraints actually matter, so deeper investment can be sequenced from there.`,
 
-Let me know if you'd like a deeper breakdown of any step.`,
-    signals: [
-      {
-        kind: 'assumption',
-        label: 'Assumption',
-        detail:
-          '"Simplest version" assumes you can ship behind a feature flag — that may not match your current rollout process.',
-        paragraphIndex: 1,
-      },
-      {
-        kind: 'verification',
-        label: 'Needs Verification',
-        detail:
-          'Confirm the metric you intend to use is already instrumented before relying on it as the success signal.',
-        paragraphIndex: 1,
-      },
-      {
-        kind: 'context',
-        label: 'Context Required',
-        detail:
-          'No timeline or team-size constraint was provided; "iterate" may take days or weeks depending on cycle time.',
-        paragraphIndex: 1,
-      },
-      {
-        kind: 'source',
-        label: 'Source Available',
-        detail:
-          'The Lean Startup pattern of "build → measure → learn" maps cleanly to these three steps if you want a canonical reference.',
-        paragraphIndex: 1,
-      },
-    ],
-  },
-  {
-    content: `A few thoughts on this:
+  `A few thoughts on this:
 
-• The most important variable is likely how strict your accuracy requirements are.
-• If precision matters, lean toward verification-heavy workflows.
-• If speed matters, accept a higher tolerance and review at the end.
+The most important variable is likely how strict your accuracy requirements are. If precision matters, lean toward verification-heavy workflows; if speed matters, accept a higher tolerance and review at the end.
 
-Happy to explore either direction in more depth.`,
-    signals: [
-      {
-        kind: 'assumption',
-        label: 'Assumption',
-        detail:
-          '"Precision vs. speed" is framed as a binary — many production systems actually need a calibrated mix per workflow.',
-        paragraphIndex: 0,
-      },
-      {
-        kind: 'assumption',
-        label: 'Assumption',
-        detail:
-          'Assumes accuracy is the dominant axis. For regulated domains, auditability or reversibility often matters more.',
-        paragraphIndex: 1,
-      },
-      {
-        kind: 'context',
-        label: 'Context Required',
-        detail:
-          'Cost-of-error and cost-of-delay were not provided; without them the tradeoff cannot be priced for your case.',
-        paragraphIndex: 1,
-      },
-      {
-        kind: 'verification',
-        label: 'Needs Verification',
-        detail:
-          'Confirm "review at the end" is acceptable to downstream consumers — many integrations need fail-fast feedback.',
-        paragraphIndex: 1,
-      },
-    ],
-  },
-  {
-    content: `Short answer — yes, with caveats.
+In practice the optimal balance is usually per-workflow rather than global. A best practice is to define an accuracy budget per pipeline so the tradeoff is explicit and reviewable.`,
 
-The approach you described should work for the common case, but it relies on a couple of assumptions that aren't always true in practice. I'd suggest documenting them clearly and adding a lightweight check before each run so you'll notice quickly if the conditions change.`,
-    signals: [
-      {
-        kind: 'assumption',
-        label: 'Assumption',
-        detail:
-          'The "common case" is treated as the default; verify it actually represents the majority of your traffic.',
-        paragraphIndex: 1,
-      },
-      {
-        kind: 'verification',
-        label: 'Needs Verification',
-        detail:
-          'The "lightweight check" is unspecified — confirm it can run in your hot path without adding meaningful latency.',
-        paragraphIndex: 1,
-      },
-      {
-        kind: 'context',
-        label: 'Context Required',
-        detail:
-          'The exact assumptions referenced ("aren\'t always true") were not enumerated. Ask for the specific list before approving.',
-        paragraphIndex: 1,
-      },
-    ],
-  },
-  {
-    content: `Here's a structured response:
+  `Short answer — yes, with caveats.
 
-— **Context**: The question touches on tradeoffs between flexibility and consistency.
-— **Recommendation**: Pick the option that protects the more expensive mistake. If consistency is the costlier failure, constrain. If flexibility is, leave room.
-— **Next step**: Define what "expensive" means for your team in one sentence, and the answer becomes clear.`,
-    signals: [
-      {
-        kind: 'assumption',
-        label: 'Assumption',
-        detail:
-          'Assumes one failure mode is materially more expensive than the other; in many teams the two are within the same order of magnitude.',
-        paragraphIndex: 2,
-      },
-      {
-        kind: 'context',
-        label: 'Context Required',
-        detail:
-          'No information about your team\'s current pain point — constraining or loosening may be the right move depending on what already hurts.',
-        paragraphIndex: 2,
-      },
-      {
-        kind: 'verification',
-        label: 'Needs Verification',
-        detail:
-          'Before adopting the recommendation, validate the cost of each failure mode with a recent incident, not a hypothetical.',
-        paragraphIndex: 2,
-      },
-      {
-        kind: 'source',
-        label: 'Source Available',
-        detail:
-          'The "expensive failure" framing comes from reversible/irreversible decision literature — useful for justifying the tradeoff internally.',
-        paragraphIndex: 1,
-      },
-    ],
-  },
+The approach you described should work for the common case, but it relies on a couple of assumptions that aren't always true in practice. I'd suggest documenting them clearly and adding a lightweight check before each run so you'll notice quickly if the conditions change.
+
+For a Postgres migration specifically, version compatibility between extensions and the new server should be verified, and any deprecated APIs the application depends on should be migrated first.`,
+
+  `Here's a structured response:
+
+— **Context**: The question touches on tradeoffs between flexibility and consistency in a Redis-backed workflow.
+
+— **Recommendation**: Pick the option that protects the more expensive mistake. If consistency is the costlier failure, constrain; if flexibility is, leave room. The preferred default for most teams is to constrain first and loosen later.
+
+— **Next step**: Define what "expensive" means for your team in one sentence, and the answer becomes clear. Confirm the framework version and the assumed scaling pattern before adopting the recommendation.`,
 ];
 
-export function generateMockReply(prompt: string): {
-  content: string;
-  signals: Signal[];
-} {
+export function generateMockReply(prompt: string): { content: string } {
   const sum = Array.from(prompt).reduce((a, c) => a + c.charCodeAt(0), 0);
-  const pick = REPLIES[sum % REPLIES.length];
-  return { content: pick.content, signals: pick.signals.map((s) => ({ ...s })) };
-}
-
-/**
- * @deprecated kept for any external callers. Prefer the object form returned
- * by `generateMockReply`.
- */
-export function generateMockSignals(prompt: string): Signal[] {
-  return generateMockReply(prompt).signals;
+  return { content: REPLIES[sum % REPLIES.length] };
 }
 
 // --- Challenge results (mocked) ---

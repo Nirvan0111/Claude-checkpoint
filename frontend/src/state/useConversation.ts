@@ -2,6 +2,7 @@ import { useCallback, useMemo, useRef, useState } from 'react';
 import { ChallengeResults, CheckpointTarget, DecisionType, ExecutionData, Message, ProtectedFile } from '../types';
 import { generateMockChallenge, generateMockReply } from '../data/mockData';
 import { generateMockExecution } from '../data/executionMock';
+import { evaluate } from '../lib/evaluation';
 
 const newId = () => Math.random().toString(36).slice(2, 10);
 const nowIso = () => new Date().toISOString();
@@ -63,7 +64,11 @@ export function useConversation(): UseConversationReturn {
 
     // Simulate Claude generating a reply (mock).
     window.setTimeout(() => {
-      const { content, signals } = generateMockReply(trimmed);
+      const { content } = generateMockReply(trimmed);
+      // Phase 3: evaluation signals are produced by the EvaluationEngine from
+      // the generated output + the original prompt. This replaces the
+      // previously-hardcoded per-reply signal sets.
+      const signals = evaluate({ prompt: trimmed, output: content });
       const execution: ExecutionData = generateMockExecution(trimmed);
       const assistantMsg: Message = {
         id: newId(),

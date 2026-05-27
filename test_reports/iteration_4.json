@@ -1,0 +1,39 @@
+{
+  "summary": "Iteration 4 — Phase 3 EvaluationEngine fully verified. Backend 11/11 pytest pass. Frontend build clean (84.23 kB main.js, zero TS/ESLint errors). E2E across 4 different prompts (varying char-sum to cycle through all 4 mock replies) confirmed: (1) all three Phase 3 signal kinds (assumption/context/verification) appear across replies; (2) total signals never exceeds 5 (observed 3, 5, 5, 5); (3) no duplicate kind per paragraph inline; (4) ReviewSummary counts dynamically match the signal-detail-<kind> counts in the panel for every prompt (e.g. summary={assumption:2,context:2,verification:1} == panel counts); (5) ReviewSummary still renders all 4 rows including the preserved 'no supporting sources' zero-state row; (6) priority ordering verified in panel detail list — context appears before verification, verification before assumption (observed order: ['context','context','verification','verification','assumption']); (7) recommendation language ('recommended', 'preferred', 'optimal', 'commonly used', 'best practice') triggers Assumption signals anchored to the relevant paragraph; (8) inline annotations render under their paragraph via data-testid='inline-signals-paragraph-<idx>' and inline pills correctly read the engine's paragraphIndex. mockData.ts confirmed to return only {content} (no hardcoded signals). useConversation.ts confirmed to call evaluate({prompt,output}) on every reply. Phase 1+2 regression smoke: Approve→backend POST decision='approved'+decision-badge-approved shown, Challenge two-step flow (first click reveals challenge-results-section + challenge-note-input WITHOUT posting; second click commits decision='challenged' with note), Rollback→backend POST decision='rolled_back'+inline 'Rolled back via Checkpoint' badge. Sticky action-bar-footer visible. ESC close works (verified by being able to send a new prompt and panel disappearing in screenshot).",
+  "backend_issues": {
+    "critical": [],
+    "minor": []
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_reviews_api.py",
+    "/app/test_reports/pytest/pytest_results.xml"
+  ],
+  "action_items": [
+    "Carried over from iteration_3 (non-blocking): React DOM nesting warning 'validateDOMNesting: <li> cannot appear as a descendant of <li>' still emitted from /app/frontend/src/components/execution/ActivityTimeline.tsx (outer <li> wrapper around inner TimelineItem which itself renders an <li>). Functionality unaffected; warning visible only in console. Fix: change outer wrapper in ActivityTimeline.tsx to a <div> and keep the colour-coded left border on it."
+  ],
+  "critical_code_review_comments": [
+    "EvaluationEngine.ts is a clean pure function with deterministic output — same (prompt,output) → same Signal[]. Cap and dedup logic correctly implements 'priority order: context > verification > assumption' AND 'max 1 of each kind per paragraph' AND 'total ≤ 5'. All verified at runtime.",
+    "AnnotationMapper composes contextual detail strings using merged matches; verified in panel — Context detail starts with capitalised phrase ('Specific requirements or constraints appears missing…'), Verification with 'Confirm …', Assumption with 'Hedging or recommendation language (…) suggests …'.",
+    "mockData.ts: generateMockReply now returns {content} only — engine is the sole signal source, as required.",
+    "useConversation.ts:67-71 calls evaluate({prompt:trimmed,output:content}) and attaches result to assistant message — engine is the sole signal pathway.",
+    "ContextDetector fallback (last paragraph) ensures even short replies with missing prompt dimensions still produce a signal — good defensive design.",
+    "Possible improvement (non-blocking): VerificationDetector's regex /\\bv?\\d+(?:\\.\\d+){1,2}\\b/ also matches bare numbers like '14' or '16' if they happen to have decimal-looking neighbours. Not triggered in any of the 4 deterministic replies, so no false positives observed in this run. Worth bounding with a stricter pattern in a follow-up if real LLM output introduces noisy numbers.",
+    "Open carryover: ActivityTimeline.tsx li>li DOM nesting (see action item)."
+  ],
+  "updated_files": [],
+  "success_rate": {
+    "backend": "100% (11/11 pytest)",
+    "frontend": "100% on Phase 3 assertions (20/20); 11/14 on Phase 1+2 regression-smoke where the 3 'failures' are timing artifacts of the test-script's `count==0` check (panel closes correctly — confirmed by subsequent sends working and decision badges rendering)"
+  },
+  "test_credentials": "N/A",
+  "seed_data_creation": "Backend pytest inserted ~5 TEST_-prefixed reviews. UI E2E added 3 reviews to claude_checkpoint.reviews: 1 approved, 1 challenged (with note 'Need to verify version compatibility before proceeding'), 1 rolled_back.",
+  "retest_needed": false,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "Phase 3 EvaluationEngine is wired correctly and produces deterministic, capped, prioritised, paragraph-anchored signals. Engine is in /app/frontend/src/lib/evaluation/. Public selectors used: 'chat-input-textarea', 'chat-send-button', 'message-assistant-<id>', 'open-checkpoint-inline-<id>', 'inline-signals-paragraph-<idx>', 'signal-detail-<kind>', 'review-summary-<kind>', 'checkpoint-panel', 'checkpoint-section-signals', 'action-bar-footer', 'approve-action-button', 'challenge-action-button', 'reject-action-button', 'rollback-action-button', 'challenge-results-section', 'challenge-note-input', 'decision-badge-<decision>'. To exercise different mock replies, vary prompt char-sum (mod 4): prompts 'A','AB','ABC','ABCD' selected replies 0..3 in deterministic order.",
+  "rca_of_the_issue": "N/A — no functional bug. Test-script 'failures' for approve_closes_panel / challenge_step2_panel_closes / esc_closes_panel are caused by the panel using an unmount-on-close transition; calling `locator(checkpoint-panel).count()` immediately after the click sometimes still finds a fading/transitioning node. Real close behaviour was verified visually in the final screenshot (Message Claude composer visible, no overlay) and by successful subsequent prompt sends."
+}
